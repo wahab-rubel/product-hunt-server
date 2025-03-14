@@ -31,7 +31,7 @@ let db, usersCollection, productsCollection, couponsCollection, membershipsColle
 // ✅ Connect Database
 async function connectDB() {
   try {
-    await client.connect();
+    // await client.connect();
     db = client.db(process.env.DB_NAME);
     usersCollection = db.collection("users");
     productsCollection = db.collection("products");
@@ -46,10 +46,6 @@ connectDB();
 
 // ✅ Helper function to validate ObjectId
 const isValidObjectId = (id) => ObjectId.isValid(id) && String(new ObjectId(id)) === id;
-
-/* ================================
-   ✅ Auth Routes
-================================= */
 
 
 // ✅ User Signup
@@ -78,8 +74,6 @@ app.post("/register", async (req, res) => {
   res.status(201).json({ message: "User registered successfully", token });
 });
 
-
-// ✅ Verify JWT Token
 app.post("/verify-token", (req, res) => {
   const token = req.body.token;
   if (!token) return res.status(400).json({ message: "No token provided" });
@@ -91,11 +85,6 @@ app.post("/verify-token", (req, res) => {
   }
 });
 
-/* ================================
-   ✅ Product Routes
-================================= */
-
-// ✅ Add Product with Image Upload and Membership Check
 app.post("/products", upload.single("productImage"), async (req, res) => {
   const { ownerEmail, productName, description, tags, externalLinks, ownerName, ownerImage } = req.body;
 
@@ -123,7 +112,6 @@ app.post("/products", upload.single("productImage"), async (req, res) => {
   res.status(201).json({ message: "Product added successfully" });
 });
 
-// ✅ Get All Products with Search and Pagination
 app.get('/products', async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
@@ -140,10 +128,9 @@ app.post('/api/products/:id/upvote', (req, res) => {
   const userId = req.body.userId;
   console.log(`Product ID: ${productId}, User ID: ${userId}`);
   // handle logic
-  res.json({ success: true, updatedVotes: 5 }); // sample response
+  res.json({ success: true, updatedVotes: 5 }); 
 });
 
-// ✅ Upvote / Downvote a product
 app.patch('/products/:id/upvote', async (req, res) => {
   const { userId } = req.body;
   const { id } = req.params;
@@ -162,8 +149,6 @@ app.patch('/products/:id/upvote', async (req, res) => {
   res.json({ success: true, updatedVotes: product.votes });
 });
 
-
-// ✅ Get rising products (votes >= 10)
 app.get('/products/rising', async (req, res) => {
   try {
     const risingProducts = await productsCollection.find({ votes: { $gte: 10 } }).toArray();
@@ -173,19 +158,12 @@ app.get('/products/rising', async (req, res) => {
   }
 });
 
-
-
-
-
-
 app.get('/myproducts', async (req, res) => {
   const email = req.query.email;
   const userProducts = await productsCollection.find({ userEmail: email }).toArray();
   res.send(userProducts);
 });
 
-
-// ✅ Get Single Product by ID
 app.get("/products/:id", async (req, res) => {
   const id = req.params.id;
   if (!isValidObjectId(id)) return res.status(400).json({ message: 'Invalid product ID format' });
@@ -195,7 +173,6 @@ app.get("/products/:id", async (req, res) => {
   res.json(product);
 });
 
-// ✅ Delete Product by ID
 app.delete("/products/:id", async (req, res) => {
   const id = req.params.id;
   if (!isValidObjectId(id)) return res.status(400).json({ message: 'Invalid product ID format' });
@@ -206,11 +183,6 @@ app.delete("/products/:id", async (req, res) => {
   res.json({ message: 'Product deleted successfully', result });
 });
 
-/* ================================
-   ✅ Coupons Routes (CRUD)
-================================= */
-
-// Get all coupons
 app.get('/coupons', async (req, res) => {
   try {
     const coupons = await couponsCollection.find().toArray();
@@ -220,7 +192,6 @@ app.get('/coupons', async (req, res) => {
   }
 });
 
-// Create a new coupon
 app.post('/coupons', async (req, res) => {
   try {
     const { code, expiryDate, description, discount } = req.body;
@@ -236,7 +207,6 @@ app.post('/coupons', async (req, res) => {
   }
 });
 
-// Get a single coupon by code
 app.get('/coupons/:code', async (req, res) => {
   try {
     const code = req.params.code;
@@ -250,7 +220,6 @@ app.get('/coupons/:code', async (req, res) => {
   }
 });
 
-// Update a coupon by ID
 app.put('/coupons/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -279,7 +248,6 @@ app.put('/coupons/:id', async (req, res) => {
   }
 });
 
-// Delete a coupon by ID
 app.delete('/coupons/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -299,25 +267,17 @@ app.delete('/coupons/:id', async (req, res) => {
   }
 });
 
-
-/* ================================
- ✅ Memberships Routes
-================================= */
-
-// Get all memberships
 app.get('/memberships', async (req, res) => {
   const memberships = await membershipsCollection.find().toArray();
   res.status(200).json(memberships);
 });
 
-// Create a new membership plan
 app.post('/memberships', async (req, res) => {
   const membership = req.body;
   const result = await membershipsCollection.insertOne(membership);
   res.status(201).json({ message: 'Membership plan created successfully', result });
 });
 
-// Get a single membership plan by ID
 app.get('/memberships/:id', async (req, res) => {
   const id = req.params.id;
   if (!isValidObjectId(id)) return res.status(400).json({ message: 'Invalid membership ID format' });
@@ -326,7 +286,6 @@ app.get('/memberships/:id', async (req, res) => {
   res.status(200).json(membership);
 });
 
-// Delete a membership plan by ID
 app.delete('/memberships/:id', async (req, res) => {
   const id = req.params.id;
   if (!isValidObjectId(id)) return res.status(400).json({ message: 'Invalid membership ID format' });
@@ -338,19 +297,12 @@ app.delete('/memberships/:id', async (req, res) => {
 // ✅ Get Statistics
 app.get("/stats", async (req, res) => {
   try {
-    // Total Products
     const totalProducts = await productsCollection.countDocuments();
-
-    // Total Votes
     const allProducts = await productsCollection.find().toArray();
     const totalVotes = allProducts.reduce((sum, product) => sum + (product.votes || 0), 0);
-
-    // Status Counts
     const acceptedProducts = await productsCollection.countDocuments({ status: "Accepted" });
     const rejectedProducts = await productsCollection.countDocuments({ status: "Rejected" });
     const pendingProducts = await productsCollection.countDocuments({ status: { $ne: "Accepted", $ne: "Rejected" } });
-
-    // Most Voted Product
     const mostVotedProduct = await productsCollection.find().sort({ votes: -1 }).limit(1).toArray();
 
     res.json({
@@ -371,7 +323,6 @@ app.get('/users', async (req, res) => {
   res.send(users);
 });
 
-
 app.patch('/users/admin/:id', async (req, res) => {
   const id = req.params.id;
   const filter = { _id: new ObjectId(id) };
@@ -387,7 +338,6 @@ app.patch('/users/moderator/:id', async (req, res) => {
   const result = await usersCollection.updateOne(filter, updateDoc);
   res.send(result);
 });
-
 
 app.patch('/products/approve/:id', async (req, res) => {
   const id = req.params.id;
@@ -421,7 +371,6 @@ app.get('/admin/statistics', async (req, res) => {
   }
 });
 
-
 app.get('/api/coupons', (req, res) => {
   res.json({
     coupons: [
@@ -436,9 +385,6 @@ app.get('/api/coupons', (req, res) => {
   });
 });
 
-/* ================================
-   ✅ Root Route
-================================= */
 app.get("/", (req, res) => {
   res.send("🚀 Product Hunt API is running!");
 });
