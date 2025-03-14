@@ -135,40 +135,33 @@ app.get('/products', async (req, res) => {
   res.json({ total, page, limit, products });
 });
 
+app.post('/api/products/:id/upvote', (req, res) => {
+  const productId = req.params.id;
+  const userId = req.body.userId;
+  console.log(`Product ID: ${productId}, User ID: ${userId}`);
+  // handle logic
+  res.json({ success: true, updatedVotes: 5 }); // sample response
+});
 
 // ✅ Upvote / Downvote a product
-app.patch('/products/:id/vote', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { type, userEmail } = req.body;
-
-    if (!isValidObjectId(id)) return res.status(400).json({ message: 'Invalid product ID format' });
-
-    const product = await productsCollection.findOne({ _id: new ObjectId(id) });
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-
-    // Prevent double voting
-    if (product.votedBy.includes(userEmail)) {
-      return res.status(400).json({ message: 'You have already voted on this product' });
-    }
-
-    let updateQuery = {};
-    if (type === 'up') {
-      updateQuery = { $inc: { votes: 1 }, $push: { votedBy: userEmail } };
-    } else if (type === 'down') {
-      updateQuery = { $inc: { votes: -1 }, $push: { votedBy: userEmail } };
-    } else {
-      return res.status(400).json({ message: 'Invalid vote type' });
-    }
-
-    await productsCollection.updateOne({ _id: new ObjectId(id) }, updateQuery);
-
-    const updatedProduct = await productsCollection.findOne({ _id: new ObjectId(id) });
-    res.json({ message: 'Vote updated', votes: updatedProduct.votes });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to vote', error: error.message });
+app.patch('/products/:id/upvote', async (req, res) => {
+  const { userId } = req.body;
+  const { id } = req.params;
+  
+  const product = await product.findById(id);
+  if (!product) return res.status(404).json({ error: "Product not found" });
+  
+  if (product.votedBy.includes(userId)) {
+     return res.status(400).json({ error: "Already voted" });
   }
+  
+  product.votes += 1;
+  product.votedBy.push(userId);
+  await product.save();
+
+  res.json({ success: true, updatedVotes: product.votes });
 });
+
 
 // ✅ Get rising products (votes >= 10)
 app.get('/products/rising', async (req, res) => {
