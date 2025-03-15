@@ -1,4 +1,3 @@
-// ✅ Import necessary packages
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -6,17 +5,17 @@ const multer = require("multer");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
-// ✅ App Initialization
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ✅ Middleware
 app.use(express.json());
+
 app.use(cors({
-  origin: ["https://assignment-12-128a0.web.app/", "http://localhost:5173"], 
-  methods: "GET,POST,PUT,DELETE",
-  credentials: true,
+  origin: ["http://localhost:5173", "https://your-frontend.netlify.app"], 
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true, 
 }));
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -25,10 +24,8 @@ const upload = multer({ storage });
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.pnlgi.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { serverApi: { version: ServerApiVersion.v1 } });
 
-// ✅ Collections
 let db, usersCollection, productsCollection, couponsCollection, membershipsCollection;
 
-// ✅ Connect Database
 async function connectDB() {
   try {
     // await client.connect();
