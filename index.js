@@ -1,3 +1,4 @@
+// ✅ Import necessary packages
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -5,15 +6,15 @@ const multer = require("multer");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
+// ✅ App Initialization
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ✅ Middleware
 app.use(express.json());
-
 app.use(cors({
-  origin: ["https://your-frontend.vercel.app", "http://localhost:5173"], 
+  origin: ["https://assignment-12-128a0.web.app/", "http://localhost:5173"], 
   methods: "GET,POST,PUT,DELETE",
   credentials: true,
 }));
@@ -24,8 +25,10 @@ const upload = multer({ storage });
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.pnlgi.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { serverApi: { version: ServerApiVersion.v1 } });
 
+// ✅ Collections
 let db, usersCollection, productsCollection, couponsCollection, membershipsCollection;
 
+// ✅ Connect Database
 async function connectDB() {
   try {
     // await client.connect();
@@ -109,6 +112,7 @@ app.post("/products", upload.single("productImage"), async (req, res) => {
   res.status(201).json({ message: "Product added successfully" });
 });
 
+// ✅ Product Pagination Fetch
 app.get('/products', async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
@@ -116,7 +120,6 @@ app.get('/products', async (req, res) => {
 
   const products = await productsCollection.find().skip(skip).limit(limit).toArray();
   const total = await productsCollection.countDocuments();
-  
   res.json({ total, page, limit, products });
 });
 
@@ -269,8 +272,6 @@ app.get('/memberships', async (req, res) => {
   res.status(200).json(memberships);
 });
 
-// ✅ Membership Plans (CRUD)
-
 // ➤ Get All Memberships
 app.get('/memberships', async (req, res) => {
   try {
@@ -365,34 +366,17 @@ app.patch('/users/moderator/:id', async (req, res) => {
   res.send(result);
 });
 
-
-// Route to approve a product
 app.patch('/products/approve/:id', async (req, res) => {
   const id = req.params.id;
-  const { status } = req.body;
+  const status = req.body.status;
 
-  // Check if status is provided
-  if (!status) {
-    return res.status(400).send({ error: true, message: 'Status is required' });
-  }
+  const result = await productsCollection.updateOne(
+    { _id: new ObjectId(id) },
+    { $set: { status: status } }
+  );
 
-  try {
-    const result = await productsCollection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { status: status } }
-    );
-
-    if (result.modifiedCount > 0) {
-      res.send({ success: true, message: 'Product approved successfully', result });
-    } else {
-      res.status(404).send({ success: false, message: 'Product not found or already approved' });
-    }
-  } catch (error) {
-    console.error('Error approving product:', error);
-    res.status(500).send({ success: false, message: 'Internal server error' });
-  }
+  res.send(result); 
 });
-
 
 app.get('/admin/statistics', async (req, res) => {
   try {
@@ -413,12 +397,6 @@ app.get('/admin/statistics', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-app.get('/reported-products', async (req, res) => {
-  const reportedProducts = await Product.find({ reported: true });
-  res.send(reportedProducts);
-});
-
 
 app.get('/api/coupons', (req, res) => {
   res.json({
