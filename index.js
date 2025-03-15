@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 5000;
 // ✅ Middleware
 app.use(express.json());
 app.use(cors({
-  origin: ["http://localhost:5173", "https://your-frontend-app.com"], 
+  origin: ["https://assignment-12-128a0.web.app/", "http://localhost:5173"], 
   methods: "GET,POST,PUT,DELETE",
   credentials: true,
 }));
@@ -272,26 +272,55 @@ app.get('/memberships', async (req, res) => {
   res.status(200).json(memberships);
 });
 
-app.post('/memberships', async (req, res) => {
-  const membership = req.body;
-  const result = await membershipsCollection.insertOne(membership);
-  res.status(201).json({ message: 'Membership plan created successfully', result });
+// ✅ Membership Plans (CRUD)
+
+// ➤ Get All Memberships
+app.get('/memberships', async (req, res) => {
+  try {
+    const memberships = await membershipsCollection.find().toArray();
+    res.status(200).json(memberships);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch memberships', error });
+  }
 });
 
+// ➤ Create New Membership Plan
+app.post('/memberships', async (req, res) => {
+  try {
+    const membership = req.body;
+    const result = await membershipsCollection.insertOne(membership);
+    res.status(201).json({ message: 'Membership plan created successfully', membershipId: result.insertedId });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to create membership plan', error });
+  }
+});
+
+// ➤ Get Single Membership Plan by ID
 app.get('/memberships/:id', async (req, res) => {
   const id = req.params.id;
   if (!isValidObjectId(id)) return res.status(400).json({ message: 'Invalid membership ID format' });
-  const membership = await membershipsCollection.findOne({ _id: new ObjectId(id) });
-  if (!membership) return res.status(404).json({ message: 'Membership not found' });
-  res.status(200).json(membership);
+
+  try {
+    const membership = await membershipsCollection.findOne({ _id: new ObjectId(id) });
+    if (!membership) return res.status(404).json({ message: 'Membership not found' });
+    res.status(200).json(membership);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch membership', error });
+  }
 });
 
+// ➤ Delete Membership Plan by ID
 app.delete('/memberships/:id', async (req, res) => {
   const id = req.params.id;
   if (!isValidObjectId(id)) return res.status(400).json({ message: 'Invalid membership ID format' });
-  const result = await membershipsCollection.deleteOne({ _id: new ObjectId(id) });
-  if (result.deletedCount === 0) return res.status(404).json({ message: 'Membership not found to delete' });
-  res.status(200).json({ message: 'Membership deleted successfully', result });
+
+  try {
+    const result = await membershipsCollection.deleteOne({ _id: new ObjectId(id) });
+    if (result.deletedCount === 0) return res.status(404).json({ message: 'Membership not found to delete' });
+    res.status(200).json({ message: 'Membership deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to delete membership', error });
+  }
 });
 
 // ✅ Get Statistics
@@ -339,17 +368,34 @@ app.patch('/users/moderator/:id', async (req, res) => {
   res.send(result);
 });
 
+
+// Route to approve a product
 app.patch('/products/approve/:id', async (req, res) => {
   const id = req.params.id;
-  const status = req.body.status;
+  const { status } = req.body;
 
-  const result = await productCollection.updateOne(
-    { _id: new ObjectId(id) },
-    { $set: { status: status } }
-  );
+  // Check if status is provided
+  if (!status) {
+    return res.status(400).send({ error: true, message: 'Status is required' });
+  }
 
-  res.send(result); 
+  try {
+    const result = await productsCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { status: status } }
+    );
+
+    if (result.modifiedCount > 0) {
+      res.send({ success: true, message: 'Product approved successfully', result });
+    } else {
+      res.status(404).send({ success: false, message: 'Product not found or already approved' });
+    }
+  } catch (error) {
+    console.error('Error approving product:', error);
+    res.status(500).send({ success: false, message: 'Internal server error' });
+  }
 });
+
 
 app.get('/admin/statistics', async (req, res) => {
   try {
@@ -370,6 +416,12 @@ app.get('/admin/statistics', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+app.get('/reported-products', async (req, res) => {
+  const reportedProducts = await Product.find({ reported: true });
+  res.send(reportedProducts);
+});
+
 
 app.get('/api/coupons', (req, res) => {
   res.json({
