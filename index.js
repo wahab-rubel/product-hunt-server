@@ -13,9 +13,9 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 
 app.use(cors({
-  origin: ["http://localhost:5173", "https://your-frontend.netlify.app"], 
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true, 
+  origin: ["https://your-frontend.vercel.app", "http://localhost:5173"], 
+  methods: "GET,POST,PUT,DELETE",
+  credentials: true,
 }));
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
