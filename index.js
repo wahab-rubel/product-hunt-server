@@ -15,7 +15,8 @@ const PORT = process.env.PORT || 5000;
 // ✅ Middleware
 app.use(express.json());
 app.use(cors({
-    origin: ["https://assignment-12-128a0.web.app", "http://localhost:5173", "assignment-12-128a0.firebaseapp.com"],
+    origin: ["https://assignment-12-128a0.web.app", "http://localhost:5173", 
+            "https://assignment-12-128a0.firebaseapp.com/"],
     methods: "GET,POST,PUT,DELETE,PATCH", 
     credentials: true
 }));
@@ -30,8 +31,8 @@ let db, usersCollection, productsCollection, couponsCollection, membershipsColle
 
 async function connectDB() {
     try {
-        await client.connect();
-        db = client.db(process.env.DB_NAME);
+        // await client.connect();
+        // db = client.db(process.env.DB_NAME);
         usersCollection = db.collection("users");
         productsCollection = db.collection("products");
         couponsCollection = db.collection("coupons");
