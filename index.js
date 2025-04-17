@@ -96,6 +96,16 @@ app.post("/verify-token", (req, res) => {
     }
 });
 
+
+app.get('/users/admin/:email', async (req, res) => {
+    const email = req.params.email;
+    const user = await usersCollection.findOne({ email: email });
+
+    const isAdmin = user?.role === 'admin';
+    res.send({ isAdmin });
+});
+
+
 // ✅ Get user role
 app.get("/users/role/:email", async (req, res) => {
     const { email } = req.params;
@@ -136,6 +146,7 @@ app.post("/products", upload.single("productImage"), async (req, res) => {
         timestamp: new Date(),
         votes: 0,
         votedBy: [],
+        bookmarkedBy: [], // Initialize bookmarkedBy array
         reportedBy: [], // Initialize reportedBy array
         reportCount: 0, // Initialize reportCount
     };
@@ -177,6 +188,33 @@ app.patch("/products/:id/upvote", async (req, res) => {
         { $inc: { votes: 1 }, $push: { votedBy: userEmail } }
     );
     res.json({ message: "Voted" });
+});
+
+// ✅ Bookmark Product
+app.post("/products/:id/bookmark", async (req, res) => {
+    const id = req.params.id;
+    const { userEmail } = req.body;
+    const product = await productsCollection.findOne({ _id: new ObjectId(id) });
+
+    if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+    }
+
+    const isBookmarked = product.bookmarkedBy && product.bookmarkedBy.includes(userEmail);
+
+    if (isBookmarked) {
+        await productsCollection.updateOne(
+            { _id: new ObjectId(id) },
+            { $pull: { bookmarkedBy: userEmail } }
+        );
+        res.json({ message: "Bookmark removed" });
+    } else {
+        await productsCollection.updateOne(
+            { _id: new ObjectId(id) },
+            { $push: { bookmarkedBy: userEmail } }
+        );
+        res.json({ message: "Product bookmarked" });
+    }
 });
 
 // ✅ Delete Product
