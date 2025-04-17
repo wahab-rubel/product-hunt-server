@@ -15,8 +15,8 @@ const PORT = process.env.PORT || 5000;
 // ✅ Middleware
 app.use(express.json());
 app.use(cors({
-    origin: ["https://assignment-12-128a0.web.app", "http://localhost:5173"],
-    methods: "GET,POST,PUT,DELETE,PATCH", // Added PATCH for upvote
+    origin: ["https://assignment-12-128a0.web.app", "http://localhost:5173", "assignment-12-128a0.firebaseapp.com"],
+    methods: "GET,POST,PUT,DELETE,PATCH", 
     credentials: true
 }));
 const storage = multer.memoryStorage();
